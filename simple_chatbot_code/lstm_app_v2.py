@@ -32,8 +32,6 @@ LABEL_ENCODER_PATH = "simple_chatbot_code/label_encoder.pickle"
 MAX_LEN_PATH = "simple_chatbot_code/MAX_LEN.pickle"
 TAGS_ANSWERS_PATH = "simple_chatbot_code/tags_answers.pickle"
 
-
-
 @st.cache_resource
 def load_all_resources():
     model = load_model(MODEL_PATH)
