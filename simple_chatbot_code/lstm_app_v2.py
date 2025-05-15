@@ -17,15 +17,16 @@ st.set_page_config(page_title="Chatbot LSTM المطور", layout="wide", page_i
 def load_spacy_model():
     try:
         nlp = spacy.load("en_core_web_sm")
-    except OSError:
+    except Exception:
         with st.spinner("جاري تحميل نموذج اللغة الإنجليزية (en_core_web_sm)... قد يستغرق هذا بعض الوقت."):
             spacy.cli.download("en_core_web_sm")
+
         nlp = spacy.load("en_core_web_sm")
     return nlp
 
 nlp = load_spacy_model()
 
-# Load pre-trained model and other necessary files
+# Pathes
 MODEL_PATH = "simple_chatbot_code/simple_chatbot_train_model.h5"
 TOKENIZER_PATH = "simple_chatbot_code/tokenizer.pickle"
 LABEL_ENCODER_PATH = "simple_chatbot_code/label_encoder.pickle"
@@ -35,44 +36,47 @@ TAGS_ANSWERS_PATH = "simple_chatbot_code/tags_answers.pickle"
 @st.cache_resource
 def load_all_resources():
     model = load_model(MODEL_PATH)
+
     with open(TOKENIZER_PATH, "rb") as handle:
         tokenizer = pickle.load(handle)
+
     with open(LABEL_ENCODER_PATH, "rb") as handle:
         lbl_encoder = pickle.load(handle)
+
     with open(MAX_LEN_PATH, "rb") as handle:
         max_len = pickle.load(handle)
+
     with open(TAGS_ANSWERS_PATH, "rb") as handle:
         tags_answers = pickle.load(handle)
+
     return model, tokenizer, lbl_encoder, max_len, tags_answers
 
 model, tokenizer, lbl_encoder, max_len, tags_answers = load_all_resources()
 
 def clean_pattern(msg):
-    pat_char = re.compile(r"[^A-Za-z0-9\sآء-ي]") # Allow spaces, numbers, and Arabic characters
-    pat_spaces = re.compile(r"\s+")
+    pat_char = re.compile(r'[^A-Za-z]')
+    pat_spaces = re.compile(r'\s+')
+
     msg = str(msg).lower()
     msg = msg.strip()
-    msg = re.sub(pat_char, "", msg)
-    msg = re.sub(pat_spaces, " ", msg)
-    # For English text, lemmatize. For Arabic, basic cleaning is done.
-    # A more sophisticated Arabic NLP library would be needed for proper Arabic lemmatization.
-    if any(char.isalpha() and ord(char) < 128 for char in msg): # Basic check for English text
-        tokens = nlp(msg)
-        lemma = [token.lemma_ for token in tokens if not token.is_stop and not token.is_punct]
-        cleaned_msg = " ".join(lemma).strip()
-    else: # Assume Arabic or mixed, apply basic cleaning
-        cleaned_msg = msg
+    msg = re.sub(pat_char,' ', msg)
+    msg = re.sub(pat_spaces,' ', msg)
+
+    tokens = nlp(msg)
+    lemma = [token.lemma_ for token in tokens if not token.is_stop and not token.is_punct]
+    cleaned_msg = " ".join(lemma).strip()
+
     return cleaned_msg
 
 def predict_intent(text, model, tokenizer, lbl_encoder, max_len):
     cleaned_text = clean_pattern(text)
-    if not cleaned_text:
-        return None
+    
     sequence = tokenizer.texts_to_sequences([cleaned_text])
-    padded_sequence = pad_sequences(sequence, truncating="post", maxlen=max_len)
+    padded_sequence = pad_sequences(sequence, padding="post", maxlen=max_len)
     prediction = model.predict(padded_sequence)
     predicted_label_index = np.argmax(prediction, axis=1)
     predicted_tag = lbl_encoder.inverse_transform(predicted_label_index)[0]
+
     return predicted_tag
 
 # --- UI Enhancements ---
@@ -92,14 +96,22 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🤖 Chatbot LSTM المطور")
+st.title("🤖 Chatbot LSTM, DEPI CLS")
 st.caption("مرحباً بك! أنا هنا لمساعدتك. كيف يمكنني خدمتك اليوم؟")
 
 # Sidebar
 with st.sidebar:
     st.header("عن الشات بوت")
     st.markdown("هذا الشات بوت يستخدم نموذج LSTM للإجابة على استفساراتك.")
-    st.markdown("تم تطويره بواسطة فريق Manus.")
+
+    st.markdown("تم تطويره بواسطة فريق DEPI Team.")
+    st.markdown("* Abdallah Samir")
+    st.markdown("* Youssef Samy")
+    st.markdown("* Shaaban Mosaad")
+    st.markdown("* Nada Amr")
+    st.markdown("* Mohammed Ahmed Badrawy")
+  
+
     if st.button("مسح سجل المحادثة"):
         st.session_state.messages = []
 
@@ -118,6 +130,7 @@ if prompt := st.chat_input("اكتب رسالتك هنا..."):
     # Display user message in chat message container
     with st.chat_message("user", avatar="🧑‍💻"):
         st.markdown(prompt)
+
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
@@ -131,6 +144,6 @@ if prompt := st.chat_input("اكتب رسالتك هنا..."):
     # Display assistant response in chat message container
     with st.chat_message("assistant", avatar="🤖"):
         st.markdown(response)
+
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": response})
-
