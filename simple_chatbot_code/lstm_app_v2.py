@@ -26,12 +26,12 @@ def load_spacy_model():
 nlp = load_spacy_model()
 
 # Load pre-trained model and other necessary files
+MODEL_PATH = "simple_chatbot_code/simple_chatbot_train_model.h5"
+TOKENIZER_PATH = "simple_chatbot_code/tokenizer.pickle"
+LABEL_ENCODER_PATH = "simple_chatbot_code/label_encoder.pickle"
+MAX_LEN_PATH = "simple_chatbot_code/MAX_LEN.pickle"
+TAGS_ANSWERS_PATH = "simple_chatbot_code/tags_answers.pickle"
 
-MODEL_PATH = "simple_chatbot_train_model.h5"
-TOKENIZER_PATH = "tokenizer.pickle"
-LABEL_ENCODER_PATH = "label_encoder.pickle"
-MAX_LEN_PATH = "MAX_LEN.pickle"
-TAGS_ANSWERS_PATH = "tags_answers.pickle"
 
 
 @st.cache_resource
