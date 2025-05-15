@@ -8,6 +8,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import load_model
 import spacy
 import random
+import time
 
 # Page config
 st.set_page_config(page_title="Chatbot LSTM المطور", layout="wide", page_icon="🤖")
@@ -18,15 +19,14 @@ def load_spacy_model():
     try:
         nlp = spacy.load("en_core_web_sm")
     except Exception:
-        with st.spinner("جاري تحميل نموذج اللغة الإنجليزية (en_core_web_sm)... قد يستغرق هذا بعض الوقت."):
+        with st.spinner("جاري تحميل نموذج اللغة الإنجليزية..."):
             spacy.cli.download("en_core_web_sm")
-
-        nlp = spacy.load("en_core_web_sm")
+            nlp = spacy.load("en_core_web_sm")
     return nlp
 
 nlp = load_spacy_model()
 
-# Pathes
+# Paths
 MODEL_PATH = "simple_chatbot_code/simple_chatbot_train_model.h5"
 TOKENIZER_PATH = "simple_chatbot_code/tokenizer.pickle"
 LABEL_ENCODER_PATH = "simple_chatbot_code/label_encoder.pickle"
@@ -54,29 +54,20 @@ def load_all_resources():
 model, tokenizer, lbl_encoder, max_len, tags_answers = load_all_resources()
 
 def clean_pattern(msg):
-    pat_char = re.compile(r'[^A-Za-z]')
-    pat_spaces = re.compile(r'\s+')
-
-    msg = str(msg).lower()
-    msg = msg.strip()
-    msg = re.sub(pat_char,' ', msg)
-    msg = re.sub(pat_spaces,' ', msg)
-
+    msg = str(msg).lower().strip()
+    msg = re.sub(r'[^A-Za-z]', ' ', msg)
+    msg = re.sub(r'\s+', ' ', msg)
     tokens = nlp(msg)
     lemma = [token.lemma_ for token in tokens if not token.is_stop and not token.is_punct]
-    cleaned_msg = " ".join(lemma).strip()
-
-    return cleaned_msg
+    return " ".join(lemma).strip()
 
 def predict_intent(text, model, tokenizer, lbl_encoder, max_len):
     cleaned_text = clean_pattern(text)
-    
     sequence = tokenizer.texts_to_sequences([cleaned_text])
     padded_sequence = pad_sequences(sequence, padding="post", maxlen=max_len)
-    prediction = model.predict(padded_sequence)
+    prediction = model.predict(padded_sequence, verbose=0)
     predicted_label_index = np.argmax(prediction, axis=1)
     predicted_tag = lbl_encoder.inverse_transform(predicted_label_index)[0]
-
     return predicted_tag
 
 # --- UI Enhancements ---
@@ -88,10 +79,18 @@ st.markdown("""
         margin-bottom: 10px;
     }
     .stChatMessage[data-testid="chatAvatarIcon-user"] + div div {
-        background-color: #e6f3ff; /* Light blue for user messages */
+        background-color: #e6f3ff;
     }
     .stChatMessage[data-testid="chatAvatarIcon-assistant"] + div div {
-        background-color: #f0f0f0; /* Light grey for assistant messages */
+        background-color: #f0f0f0;
+    }
+    .typing {
+        color: #888;
+        font-style: italic;
+        animation: blink 1s step-start infinite;
+    }
+    @keyframes blink {
+        50% { opacity: 0; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -103,47 +102,60 @@ st.caption("مرحباً بك! أنا هنا لمساعدتك. كيف يمكنن
 with st.sidebar:
     st.header("عن الشات بوت")
     st.markdown("هذا الشات بوت يستخدم نموذج LSTM للإجابة على استفساراتك.")
-
     st.markdown("تم تطويره بواسطة فريق DEPI Team.")
-    st.markdown("* Abdallah Samir")
-    st.markdown("* Youssef Samy")
-    st.markdown("* Shaaban Mosaad")
-    st.markdown("* Nada Amr")
-    st.markdown("* Mohammed Ahmed Badrawy")
-  
-
+    st.markdown("* Abdallah Samir\n* Youssef Samy\n* Shaaban Mosaad\n* Nada Amr\n* Mohammed Ahmed Badrawy")
+    
+    st.markdown("---")
+    tone = st.radio("اختر نغمة الردود:", ["رسمية", "ودية"], index=0)
+    
     if st.button("مسح سجل المحادثة"):
         st.session_state.messages = []
+
+    if st.session_state.get("messages"):
+        st.download_button(
+            label="📥 تحميل سجل المحادثة",
+            data=json.dumps(st.session_state.messages, ensure_ascii=False, indent=2),
+            file_name="chat_history.json",
+            mime="application/json"
+        )
 
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat messages from history on app rerun
+# Display message count
+st.info(f"📨 عدد الرسائل في المحادثة: {len(st.session_state.messages)}")
+
+# Display chat messages
 for message in st.session_state.messages:
     avatar_icon = "🧑‍💻" if message["role"] == "user" else "🤖"
     with st.chat_message(message["role"], avatar=avatar_icon):
         st.markdown(message["content"])
 
-# React to user input
+# Handle user input
 if prompt := st.chat_input("اكتب رسالتك هنا..."):
-    # Display user message in chat message container
+    # User message
     with st.chat_message("user", avatar="🧑‍💻"):
         st.markdown(prompt)
-
-    # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    predicted_tag = predict_intent(prompt, model, tokenizer, lbl_encoder, max_len)
-    
-    response = "آسف، لم أفهم ذلك تمامًا. هل يمكنك محاولة إعادة صياغة سؤالك أو طرح سؤال آخر؟"
-    if predicted_tag and predicted_tag in tags_answers:
-        possible_responses = tags_answers[predicted_tag]
-        response = random.choice(possible_responses)
-    
-    # Display assistant response in chat message container
+    # Typing animation
     with st.chat_message("assistant", avatar="🤖"):
-        st.markdown(response)
+        with st.spinner("يكتب..."):
+            time.sleep(1.2)  # simulate delay
 
-    # Add assistant response to chat history
-    st.session_state.messages.append({"role": "assistant", "content": response})
+            predicted_tag = predict_intent(prompt, model, tokenizer, lbl_encoder, max_len)
+
+            default_response = "آسف، لم أفهم ذلك تمامًا. حاول تشرح بطريقة مختلفة."
+            response = default_response
+
+            if predicted_tag in tags_answers:
+                response = random.choice(tags_answers[predicted_tag])
+                if tone == "ودية":
+                    response = f"😊 {response}"
+                else:
+                    response = f"{response}."
+
+            st.markdown(response)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+
