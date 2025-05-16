@@ -104,12 +104,28 @@ st.caption("مرحباً بك! أنا هنا لمساعدتك. كيف يمكنن
 # الشريط الجانبي
 with st.sidebar:
     st.header("عن الشات بوت")
-    st.markdown("💡 هذا الشات بوت يستخدم نموذج LSTM للإجابة على استفساراتك.")
-    st.markdown("🛠️ تم تطويره بواسطة فريق DEPI Team:")
+    st.markdown("💡  LSTM هذا الشات بوت يستخدم نموذج للإجابة على استفساراتك.")
+    st.markdown("🛠️ Developed By DEPI Team:")
     st.markdown("- Abdallah Samir\n- Youssef Samy\n- Shaaban Mosaad\n- Nada Amr\n- Mostafa Ahmed Elesely\n- Mohammed Ahmed Badrawy")
 
-    if st.button("🧹 مسح سجل المحادثة"):
+    if st.button(" Clear Chat 🧹"):
         st.session_state.messages = []
+    # تحميل سجل المحادثة كملف TXT
+    if st.button("📥 تحميل سجل المحادثة"):
+        if "messages" in st.session_state and st.session_state.messages:
+            chat_text = ""
+            for msg in st.session_state.messages:
+                role = "أنت" if msg["role"] == "user" else "الشات بوت"
+                chat_text += f"{role}: {msg['content']}\n\n"
+
+            st.download_button(
+                label="اضغط هنا لتنزيل المحادثة",
+                data=chat_text,
+                file_name="chat_history.txt",
+                mime="text/plain"
+            )
+        else:
+            st.info("لا يوجد محادثة حالياً لتحميلها.")
 
 # تهيئة المحادثة
 if "messages" not in st.session_state:
