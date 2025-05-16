@@ -106,7 +106,7 @@ with st.sidebar:
     st.header("عن الشات بوت")
     st.markdown("💡 هذا الشات بوت يستخدم نموذج LSTM للإجابة على استفساراتك.")
     st.markdown("🛠️ تم تطويره بواسطة فريق DEPI Team:")
-    st.markdown("- Abdallah Samir\n- Youssef Samy\n- Shaaban Mosaad\n- Nada Amr\n- Mohammed Ahmed Badrawy")
+    st.markdown("- Abdallah Samir\n- Youssef Samy\n- Shaaban Mosaad\n- Nada Amr\n- Mostafa Ahmed Elesely\n- Mohammed Ahmed Badrawy")
 
     if st.button("🧹 مسح سجل المحادثة"):
         st.session_state.messages = []
