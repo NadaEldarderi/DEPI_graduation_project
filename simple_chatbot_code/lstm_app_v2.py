@@ -104,14 +104,14 @@ st.caption("مرحباً بك! أنا هنا لمساعدتك. كيف يمكنن
 # الشريط الجانبي
 with st.sidebar:
     st.header("عن الشات بوت")
-    st.markdown("💡  LSTM هذا الشات بوت يستخدم نموذج للإجابة على استفساراتك.")
+    st.markdown("💡 هذا الشات بوت يستخدم نموذج LSTM للإجابة على استفساراتك.")
     st.markdown("🛠️ Developed By DEPI Team:")
     st.markdown("- Abdallah Samir\n- Youssef Samy\n- Shaaban Mosaad\n- Nada Amr\n- Mostafa Ahmed Elesely\n- Mohammed Ahmed Badrawy")
 
     if st.button(" Clear Chat 🧹"):
         st.session_state.messages = []
     # تحميل سجل المحادثة كملف TXT
-    if st.button("📥 تحميل سجل المحادثة"):
+    if st.button("Download chat📄📥"):
         if "messages" in st.session_state and st.session_state.messages:
             chat_text = ""
             for msg in st.session_state.messages:
